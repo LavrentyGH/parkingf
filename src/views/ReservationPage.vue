@@ -34,9 +34,10 @@
           <div class="reservation-info">
             <div class="reservation-header">
 <!--              <span class="license-plate">{{ reservation.car?.licensePlate }}</span>-->
-              <span class="license-plate">{{ reservation.carLicensePlate }}</span>
+              <span class="license-plate">ТС №: {{ reservation.carLicensePlate }}</span>
 <!--              <span class="spot-number">Место: {{ reservation.parkingSpot?.spotNumber }}</span>-->
-              <span class="spot-number">Место: {{ reservation.parkingSpot?.spotNumber }}</span>
+              <span class="spot-number">Место: {{ reservation.spotNumber }}</span>
+<!--              <span class="spot-number">Место: {{ reservation.parkingSpot?.spotNumber }}</span>-->
             </div>
             <div class="reservation-details">
 <!--              <span class="owner">Владелец: {{ reservation.car?.owner?.fullName }}</span>-->

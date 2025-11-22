@@ -75,10 +75,23 @@ export const useParkingStore = defineStore('parking', () => {
 
     const createCar = async (carData) => {
         try {
-            const response = await axios.post(`${API_BASE}/cars`, carData)
+
+            console.log('createCar called with:', carData);
+
+            const requestData = {
+                licensePlate: carData.licensePlate,
+                ownerId: carData.owner?.id || carData.ownerId
+            };
+
+            console.log('Sending to backend:', requestData);
+
+            const response = await axios.post(`${API_BASE}/cars`, requestData)
             await fetchCars()
             return response.data
         } catch (err) {
+
+            console.error('❌ Error creating car:', err.response?.data);
+
             error.value = err.response?.data?.message || 'Ошибка при создании автомобиля'
             throw err
         }
@@ -129,17 +142,23 @@ export const useParkingStore = defineStore('parking', () => {
     const fetchReservations = async () => {
         try {
             const response = await axios.get(`${API_BASE}/reservations`)
-           // console.log('Reservations data:', response.data) //todo отладка
             reservations.value = response.data
         } catch (err) {
             error.value = err.response?.data?.message || 'Ошибка при загрузке бронирований'
-           // console.error('Error fetching reservations:', err)
         }
     }
 
     const createReservation = async (reservationData) => {
         try {
-            const response = await axios.post(`${API_BASE}/reservations`, reservationData)
+
+            const requestData = {
+                carId: reservationData.car.id,
+                spotId: reservationData.parkingSpot.id
+            };
+
+            console.log('Sending data:', requestData);//логи
+
+            const response = await axios.post(`${API_BASE}/reservations`, requestData)
             await fetchReservations()
             await fetchParkingSpots()
             return response.data
