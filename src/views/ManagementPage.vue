@@ -11,23 +11,46 @@
     <div class="section">
       <div class="section-header">
         <h3>Владельцы</h3>
-        <button @click="showOwnerDialog = true" class="add-btn">+ Добавить владельца</button>
+        <button @click="addOwner" class="add-btn">+ Добавить владельца</button>
       </div>
 
       <div v-if="store.loading" class="loading">Загрузка...</div>
-      <div v-else class="owners-list">
-        <div v-for="owner in store.owners" :key="owner.id" class="owner-item">
-          <div class="owner-info">
-            <span class="owner-name">{{ owner.fullName }}</span>
-            <small class="owner-date">{{ formatDate(owner.createdAt) }}</small>
+      <div v-else>
+        <div class="owners-list">
+          <div v-for="owner in store.owners" :key="owner.id" class="owner-item">
+            <div class="owner-info">
+              <span class="owner-name">{{ owner.fullName }}</span>
+              <small class="owner-date">{{ formatDate(owner.createdAt) }}</small>
+            </div>
+            <div class="owner-actions">
+              <button @click="editOwner(owner)" class="btn-edit">✏️</button>
+              <button @click="deleteOwner(owner.id)" class="btn-delete">🗑️</button>
+            </div>
           </div>
-          <div class="owner-actions">
-            <button @click="editOwner(owner)" class="btn-edit">✏️</button>
-            <button @click="deleteOwner(owner.id)" class="btn-delete">🗑️</button>
+          <div v-if="store.owners.length === 0" class="empty-state">
+            Нет владельцев
           </div>
         </div>
-        <div v-if="store.owners.length === 0" class="empty-state">
-          Нет владельцев
+
+        <!-- Пагинация владельцев -->
+        <div class="pagination">
+          <button
+              @click="changeOwnerPage(pagination.owners.currentPage - 1)"
+              :disabled="pagination.owners.currentPage === 0"
+              class="pagination-btn"
+          >
+            Назад
+          </button>
+          <span class="pagination-info">
+            Страница {{ pagination.owners.currentPage + 1 }} из {{ pagination.owners.totalPages }}
+          </span>
+          <button
+              @click="changeOwnerPage(pagination.owners.currentPage + 1)"
+              :disabled="pagination.owners.currentPage >= pagination.owners.totalPages - 1"
+              class="pagination-btn"
+          >
+            Вперед
+          </button>
         </div>
       </div>
     </div>
@@ -36,14 +59,13 @@
     <div class="section">
       <div class="section-header">
         <h3>Автомобили</h3>
-        <button @click="showCarDialog = true" class="add-btn">+ Добавить автомобиль</button>
+        <button @click="addCar" class="add-btn">+ Добавить автомобиль</button>
       </div>
 
       <div class="cars-list">
         <div v-for="car in store.cars" :key="car.id" class="car-item">
           <div class="car-info">
             <span class="license-plate">{{ car.licensePlate }}</span>
-<!--            <span class="owner">Владелец: {{ car.owner?.fullName }}</span>-->
             <span class="owner">Владелец: {{ car.ownerFullName || 'Не указан' }}</span>
             <small class="car-date">{{ formatDate(car.createdAt) }}</small>
           </div>
@@ -55,6 +77,78 @@
         <div v-if="store.cars.length === 0" class="empty-state">
           Нет автомобилей
         </div>
+
+        <!-- Пагинация автомобилей -->
+        <div class="pagination">
+          <button
+              @click="changeCarPage(pagination.cars.currentPage - 1)"
+              :disabled="pagination.cars.currentPage === 0"
+              class="pagination-btn"
+          >
+            Назад
+          </button>
+          <span class="pagination-info">
+            Страница {{ pagination.cars.currentPage + 1 }} из {{ pagination.cars.totalPages }}
+          </span>
+          <button
+              @click="changeCarPage(pagination.cars.currentPage + 1)"
+              :disabled="pagination.cars.currentPage >= pagination.cars.totalPages - 1"
+              class="pagination-btn"
+          >
+            Вперед
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Парковочные места -->
+    <div class="section">
+      <div class="section-header">
+        <h3>Парковочные места</h3>
+        <button @click="addSpot" class="add-btn">+ Добавить место</button>
+      </div>
+
+      <div class="spots-grid">
+        <div
+            v-for="spot in store.parkingSpots"
+            :key="spot.id"
+            :class="['spot-card', { available: spot.isAvailable, occupied: !spot.isAvailable }]"
+        >
+          <div class="spot-header">
+            <span class="spot-number">{{ spot.spotNumber }}</span>
+            <span :class="['spot-status', { available: spot.isAvailable, occupied: !spot.isAvailable }]">
+              {{ spot.isAvailable ? 'Свободно' : 'Занято' }}
+            </span>
+          </div>
+          <div class="spot-actions">
+            <button @click="editSpot(spot)" class="btn-edit">✏️</button>
+            <button @click="deleteSpot(spot.id)" class="btn-delete">🗑️</button>
+          </div>
+        </div>
+        <div v-if="store.parkingSpots.length === 0" class="empty-state">
+          Нет парковочных мест
+        </div>
+      </div>
+
+      <!-- Пагинация парковочных мест -->
+      <div class="pagination">
+        <button
+            @click="changeSpotPage(pagination.parkingSpots.currentPage - 1)"
+            :disabled="pagination.parkingSpots.currentPage === 0"
+            class="pagination-btn"
+        >
+          Назад
+        </button>
+        <span class="pagination-info">
+          Страница {{ pagination.parkingSpots.currentPage + 1 }} из {{ pagination.parkingSpots.totalPages }}
+        </span>
+        <button
+            @click="changeSpotPage(pagination.parkingSpots.currentPage + 1)"
+            :disabled="pagination.parkingSpots.currentPage >= pagination.parkingSpots.totalPages - 1"
+            class="pagination-btn"
+        >
+          Вперед
+        </button>
       </div>
     </div>
 
@@ -105,19 +199,43 @@
         </div>
       </div>
     </div>
+
+    <!-- Диалог парковочного места -->
+    <div v-if="showSpotDialog" class="dialog-overlay" @click="showSpotDialog = false">
+      <div class="dialog" @click.stop>
+        <h4>{{ isEditingSpot ? 'Редактировать' : 'Добавить' }} парковочное место</h4>
+        <input
+            v-model="currentSpot.spotNumber"
+            placeholder="Номер места *"
+            class="input"
+        />
+        <div class="dialog-actions">
+          <button @click="showSpotDialog = false" class="btn-cancel">Отмена</button>
+          <button
+              @click="saveSpot"
+              class="btn-primary"
+              :disabled="!currentSpot.spotNumber"
+          >
+            {{ isEditingSpot ? 'Обновить' : 'Добавить' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { useParkingStore } from '../stores/parkingStore'
+import {ref, reactive, onMounted, computed} from 'vue'
+import {useParkingStore} from '../stores/parkingStore'
 
 const store = useParkingStore()
 
 const showOwnerDialog = ref(false)
 const showCarDialog = ref(false)
+const showSpotDialog = ref(false)
 const isEditingOwner = ref(false)
 const isEditingCar = ref(false)
+const isEditingSpot = ref(false)
 
 const currentOwner = reactive({
   id: null,
@@ -130,6 +248,16 @@ const currentCar = reactive({
   ownerId: ''
 })
 
+const currentSpot = reactive({
+  id: null,
+  spotNumber: '',
+  isAvailable: true
+})
+
+// Computed properties для пагинации
+const pagination = computed(() => store.pagination)
+
+// Owners methods
 const addOwner = () => {
   currentOwner.id = null
   currentOwner.fullName = ''
@@ -147,9 +275,9 @@ const editOwner = (owner) => {
 const saveOwner = async () => {
   try {
     if (isEditingOwner.value) {
-      await store.updateOwner(currentOwner.id, { fullName: currentOwner.fullName })
+      await store.updateOwner(currentOwner.id, {fullName: currentOwner.fullName})
     } else {
-      await store.createOwner({ fullName: currentOwner.fullName })
+      await store.createOwner({fullName: currentOwner.fullName})
     }
     showOwnerDialog.value = false
   } catch (error) {
@@ -167,6 +295,13 @@ const deleteOwner = async (id) => {
   }
 }
 
+const changeOwnerPage = (page) => {
+  if (page >= 0 && page < pagination.value.owners.totalPages) {
+    store.fetchOwners(page, pagination.value.owners.pageSize)
+  }
+}
+
+// Cars methods
 const addCar = () => {
   currentCar.id = null
   currentCar.licensePlate = ''
@@ -178,7 +313,7 @@ const addCar = () => {
 const editCar = (car) => {
   currentCar.id = car.id
   currentCar.licensePlate = car.licensePlate
-  currentCar.ownerId = car.owner?.id || car.ownerId
+  currentCar.ownerId = car.ownerId
   isEditingCar.value = true
   showCarDialog.value = true
 }
@@ -187,7 +322,7 @@ const saveCar = async () => {
   try {
     const carData = {
       licensePlate: currentCar.licensePlate,
-      owner: { id: currentCar.ownerId }
+      ownerId: currentCar.ownerId
     }
 
     if (isEditingCar.value) {
@@ -211,13 +346,71 @@ const deleteCar = async (id) => {
   }
 }
 
+const changeCarPage = (page) => {
+  if (page >= 0 && page < pagination.value.cars.totalPages) {
+    store.fetchCars(page, pagination.value.cars.pageSize)
+  }
+}
+
+// Parking spots methods
+const addSpot = () => {
+  currentSpot.id = null
+  currentSpot.spotNumber = ''
+  currentSpot.isAvailable = true
+  isEditingSpot.value = false
+  showSpotDialog.value = true
+}
+
+const editSpot = (spot) => {
+  currentSpot.id = spot.id
+  currentSpot.spotNumber = spot.spotNumber
+  currentSpot.isAvailable = spot.isAvailable
+  isEditingSpot.value = true
+  showSpotDialog.value = true
+}
+
+const saveSpot = async () => {
+  try {
+    const spotData = {
+      spotNumber: currentSpot.spotNumber,
+      isAvailable: currentSpot.isAvailable
+    }
+
+    if (isEditingSpot.value) {
+      await store.updateParkingSpot(currentSpot.id, spotData)
+    } else {
+      await store.createParkingSpot(spotData)
+    }
+    showSpotDialog.value = false
+  } catch (error) {
+    // Ошибка уже в store.error
+  }
+}
+
+const deleteSpot = async (id) => {
+  if (confirm('Вы уверены, что хотите удалить парковочное место?')) {
+    try {
+      await store.deleteParkingSpot(id)
+    } catch (error) {
+      // Ошибка уже в store.error
+    }
+  }
+}
+
+const changeSpotPage = (page) => {
+  if (page >= 0 && page < pagination.value.parkingSpots.totalPages) {
+    store.fetchParkingSpots(page, pagination.value.parkingSpots.pageSize)
+  }
+}
+
 const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString('ru-RU')
 }
 
 onMounted(() => {
-  store.fetchOwners()
-  store.fetchCars()
+  store.fetchOwners(0, 5)
+  store.fetchCars(0, 5)
+  store.fetchParkingSpots(0, 10)
 })
 </script>
 
@@ -231,7 +424,7 @@ onMounted(() => {
   padding: 20px;
   background: white;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .section-header {
@@ -340,6 +533,102 @@ onMounted(() => {
   border-left: 4px solid #c62828;
 }
 
+/* Стили для парковочных мест */
+.spots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.spot-card {
+  padding: 15px;
+  border-radius: 8px;
+  border: 2px solid #ddd;
+}
+
+.spot-card.available {
+  border-color: #4CAF50;
+  background: #f1f8e9;
+}
+
+.spot-card.occupied {
+  border-color: #f44336;
+  background: #ffebee;
+}
+
+.spot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.spot-number {
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+.spot-status {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: 600;
+}
+
+.spot-status.available {
+  background: #4CAF50;
+  color: white;
+}
+
+.spot-status.occupied {
+  background: #f44336;
+  color: white;
+}
+
+.spot-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Пагинация */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.pagination-btn {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.pagination-btn:disabled {
+  background: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #42b983;
+  color: white;
+  border-color: #42b983;
+}
+
+.pagination-info {
+  font-size: 0.9em;
+  color: #666;
+}
+
 /* Диалоги */
 .dialog-overlay {
   position: fixed;
@@ -347,7 +636,7 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -360,7 +649,7 @@ onMounted(() => {
   border-radius: 8px;
   min-width: 400px;
   max-width: 500px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 .dialog h4 {

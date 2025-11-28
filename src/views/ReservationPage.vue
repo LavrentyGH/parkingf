@@ -77,17 +77,17 @@
 
         <div class="form-group">
           <label>Автомобиль *</label>
-          <select v-model="newReservation.carId" class="input">
+          <select v-model="newReservation.carId" class="input" @change="console.log('Car selected:', newReservation.carId)">
             <option value="">Выберите автомобиль</option>
             <option v-for="car in store.cars" :key="car.id" :value="car.id">
-              {{ car.licensePlate }} ({{ car.owner?.fullName }})
+              {{ car.licensePlate }} ({{ car.ownerFullName }})
             </option>
           </select>
         </div>
 
         <div class="form-group">
           <label>Парковочное место *</label>
-          <select v-model="newReservation.spotId" class="input">
+          <select v-model="newReservation.spotId" class="input" @change="console.log('Spot selected:', newReservation.spotId)">
             <option value="">Выберите место</option>
             <option v-for="spot in availableSpots" :key="spot.id" :value="spot.id">
               {{ spot.spotNumber }} {{ spot.isAvailable ? '✅' : '❌' }}
@@ -122,23 +122,12 @@ const store = useParkingStore()
 const searchQuery = ref('')
 const showReservationDialog = ref(false)
 const newReservation = ref({
-  carId: '',
-  spotId: ''
+  // carId: '',
+  // spotId: ''
+  carId: null,
+  spotId: null
 })
 const availableSpots = ref([])
-
-// Computed properties
-// const displayedReservations = computed(() => {
-//   if (searchQuery.value) {
-//     return store.reservations.filter(res =>
-//             res.status === 'ACTIVE' && (
-//                 res.car?.licensePlate?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-//                 res.car?.owner?.fullName?.toLowerCase().includes(searchQuery.value.toLowerCase())
-//             )
-//     )
-//   }
-//   return store.reservations.filter(res => res.status === 'ACTIVE')
-// })
 
 const displayedReservations = computed(() => {
   if (!searchQuery.value.trim()) {
@@ -154,14 +143,6 @@ const displayedReservations = computed(() => {
   )
 })
 
-// Methods
-// const searchReservations = () => {
-//   // Поиск уже реализован в computed свойстве
-//   // В реальном приложении здесь можно сделать API запрос
-//   console.log('Поиск:', searchQuery.value)
-// }
-
-//todo
 const searchReservations = async () => {
   if (searchQuery.value.trim()) {
     try {
@@ -169,8 +150,6 @@ const searchReservations = async () => {
         licensePlate: searchQuery.value,
         ownerName: searchQuery.value
       })
-      // Временное решение - используем локальную фильтрацию
-      console.log('Результаты поиска:', results)
     } catch (error) {
       console.error('Ошибка поиска:', error)
     }
@@ -197,17 +176,34 @@ const openReservationDialog = async () => {
 }
 
 const createReservation = async () => {
+
+  console.log('🔍 newReservation:', newReservation.value)
+  console.log('🔍 carId:', newReservation.value.carId, 'type:', typeof newReservation.value.carId)
+  console.log('🔍 spotId:', newReservation.value.spotId, 'type:', typeof newReservation.value.spotId)
+
+  // Проверка что значения установлены
+  if (!newReservation.value.carId || !newReservation.value.spotId) {
+    console.error('❌ Не заполнены обязательные поля')
+    alert('Пожалуйста, выберите автомобиль и парковочное место')
+    return
+  }
+
   try {
+    // Создаем объект с данными
     const reservationData = {
-      car: { id: newReservation.value.carId },
-      parkingSpot: { id: newReservation.value.spotId }
+      carId: newReservation.value.carId,
+      spotId: newReservation.value.spotId
     }
+
+    console.log('📤 Отправляемые данные в store:', reservationData)
 
     await store.createReservation(reservationData)
     showReservationDialog.value = false
     alert('Место успешно забронировано!')
   } catch (error) {
-    console.error('Ошибка создания бронирования:', error)
+    console.error('❌ Ошибка создания бронирования:', error)
+    console.error('📄 Ответ сервера:', error.response?.data)
+    alert('Ошибка: ' + (error.response?.data?.message || 'Не удалось создать бронирование'))
   }
 }
 
