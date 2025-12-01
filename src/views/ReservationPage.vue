@@ -43,7 +43,7 @@
 <!--              <span class="owner">Владелец: {{ reservation.car?.owner?.fullName }}</span>-->
               <span class="owner">Владелец: {{ reservation.ownerFullName }}</span>
               <span class="start-time">Начало: {{ formatDateTime(reservation.startTime) }}</span>
-              <span class="status" :class="{ 'paid': reservation.isPaid, 'unpaid': !reservation.isPaid }">
+              <span class="status" :class="{ 'isPaid': reservation.isPaid, 'unpaid': !reservation.isPaid }">
                 {{ reservation.isPaid ? 'Оплачено' : 'Не оплачено' }}
               </span>
             </div>
@@ -361,7 +361,7 @@ onMounted(() => {
   font-weight: 600;
 }
 
-.status.paid {
+.status.isPaid {
   background: #E8F5E8;
   color: #2E7D32;
 }

@@ -229,29 +229,35 @@ export const useParkingStore = defineStore('parking', () => {
         }
     }
 
-    const createReservation = async () => {
-        // Проверка что все поля заполнены
-        if (!newReservation.value.carId || !newReservation.value.spotId) {
-            alert('Пожалуйста, выберите автомобиль и парковочное место')
-            return
-        }
-
+    const createReservation = async (reservationData) => {
         try {
-            // Преобразуем в числа и создаем объект
-            const reservationData = {
-                carId: Number(newReservation.value.carId),
-                spotId: Number(newReservation.value.spotId)
+            console.log('🔄 Store received reservation data:', reservationData)
+
+            if (!reservationData || reservationData.carId === undefined || reservationData.spotId === undefined) {
+                const errorMsg = 'Неполные данные для бронирования в store'
+                console.error('❌', errorMsg, reservationData)
+                throw new Error(errorMsg)
             }
 
-            console.log('📤 Отправляемые данные:', reservationData)
+            const requestData = {
+                carId: Number(reservationData.carId),
+                spotId: Number(reservationData.spotId)
+            }
 
-            await store.createReservation(reservationData)
-            showReservationDialog.value = false
-            alert('Место успешно забронировано!')
-        } catch (error) {
-            console.error('❌ Ошибка создания бронирования:', error)
-            console.error('📄 Ответ сервера:', error.response?.data)
-            alert('Ошибка: ' + (error.response?.data?.message || 'Не удалось создать бронирование'))
+            console.log('📨 Sending to backend:', requestData)
+
+            const response = await axios.post(`${API_BASE}/reservations`, requestData)
+
+            console.log('✅ Response from backend:', response.data)
+
+            // Обновляем данные
+            await fetchReservations(pagination.value.reservations.currentPage, pagination.value.reservations.pageSize)
+            await fetchParkingSpots(pagination.value.parkingSpots.currentPage, pagination.value.parkingSpots.pageSize)
+
+            return response.data
+        } catch (err) {
+            error.value = err.response?.data?.message || 'Ошибка при создании бронирования'
+            throw err
         }
     }
 
@@ -313,6 +319,5 @@ export const useParkingStore = defineStore('parking', () => {
         createReservation,
         markAsPaid,
         freeSpot,
-        // searchReservations // УБЕРИ ЭТО ИЗ RETURN
     }
 })
